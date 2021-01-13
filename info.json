@@ -1,0 +1,12 @@
+{
+  "commit": {
+    "commit": "66c08e8cc6f46c4a00a6f0e4c961b1cf928b3a04",
+    "author": "Scott Chamberlain <sckott@fastmail.com>",
+    "time": "2021-01-13 16:20:12",
+    "files": 18,
+    "merge": false,
+    "message": "fix various urls\n"
+  },
+  "remote": "https://github.com/ropensci/geojsonio",
+  "pkg": "geojsonio"
+}
