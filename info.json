@@ -1,0 +1,12 @@
+{
+  "commit": {
+    "commit": "7e4cc683ed3d6eec38a8cae5ce03fa6d82acafc7",
+    "author": "Mike Mahoney <mike.mahoney.218@gmail.com>",
+    "time": "2023-10-25 15:12:41",
+    "files": 2,
+    "merge": false,
+    "message": "Remove rgeos mentions from readme\n"
+  },
+  "repo": "https://github.com/ropensci/geojsonio",
+  "pkg": "geojsonio"
+}
