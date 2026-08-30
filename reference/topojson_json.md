@@ -1,0 +1,258 @@
+# Convert many input types with spatial data to TopoJSON as a JSON string
+
+Convert many input types with spatial data to TopoJSON as a JSON string
+
+## Usage
+
+``` r
+topojson_json(
+  input,
+  lat = NULL,
+  lon = NULL,
+  group = NULL,
+  geometry = "point",
+  type = "FeatureCollection",
+  convert_wgs84 = FALSE,
+  crs = NULL,
+  object_name = "foo",
+  quantization = 0,
+  ...
+)
+```
+
+## Arguments
+
+- input:
+
+  Input list, data.frame, spatial class, or sf class. Inputs can also be
+  dplyr `tbl_df` class since it inherits from `data.frame`.
+
+- lat:
+
+  (character) Latitude name. The default is `NULL`, and we attempt to
+  guess.
+
+- lon:
+
+  (character) Longitude name. The default is `NULL`, and we attempt to
+  guess.
+
+- group:
+
+  (character) A grouping variable to perform grouping for polygons -
+  doesn't apply for points
+
+- geometry:
+
+  (character) One of point (Default) or polygon.
+
+- type:
+
+  (character) The type of collection. One of 'auto' (default for 'sf'
+  objects), 'FeatureCollection' (default for everything else), or
+  'GeometryCollection'. "skip" skips the coercion with package geojson
+  functions; skipping can save significant run time on larger geojson
+  objects. `Spatial` objects can only accept "FeatureCollection" or
+  "skip". "skip" is not available as an option for `numeric`, `list`,
+  and `data.frame` classes
+
+- convert_wgs84:
+
+  Should the input be converted to the standard CRS system for GeoJSON
+  (https://tools.ietf.org/html/rfc7946) (geographic coordinate reference
+  system, using the WGS84 datum, with longitude and latitude units of
+  decimal degrees; EPSG: 4326). Default is `FALSE` though this may
+  change in a future package version. This will only work for `sf` or
+  `Spatial` objects with a CRS already defined. If one is not defined
+  but you know what it is, you may define it in the `crs` argument
+  below.
+
+- crs:
+
+  The CRS of the input if it is not already defined. This can be an epsg
+  code as a four or five digit integer or a valid proj4 string. This
+  argument will be ignored if `convert_wgs84` is `FALSE` or the object
+  already has a CRS.
+
+- object_name:
+
+  (character) name to give to the TopoJSON object created. Default:
+  "foo"
+
+- quantization:
+
+  (numeric) quantization parameter, use this to quantize geometry prior
+  to computing topology. Typical values are powers of ten (`1e4`, `1e5`,
+  ...), default is `0` to not perform quantization. For more information
+  about quantization, see this by Mike Bostock
+  https://stackoverflow.com/questions/18900022/topojson-quantization-vs-simplification/18921214#18921214
+
+- ...:
+
+  args passed down to
+  [`geojson_json()`](https://docs.ropensci.org/geojsonio/reference/geojson_json.md);
+  see
+  [`geojson_json()`](https://docs.ropensci.org/geojsonio/reference/geojson_json.md)
+  for help on what's supported here
+
+## Value
+
+An object of class `geo_json` (and `json`)
+
+## Details
+
+The `type` parameter is automatically converted to `type="auto"` if a
+sf, sfc, or sfg class is passed to `input`
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# From a numeric vector of length 2, making a point type
+topojson_json(c(-99.74, 32.45), pretty = TRUE)
+topojson_json(c(-99.74, 32.45), type = "GeometryCollection")
+
+## polygon type
+### this requires numeric class input, so inputting a list will dispatch on the list method
+poly <- c(
+  c(-114.345703125, 39.436192999314095),
+  c(-114.345703125, 43.45291889355468),
+  c(-106.61132812499999, 43.45291889355468),
+  c(-106.61132812499999, 39.436192999314095),
+  c(-114.345703125, 39.436192999314095)
+)
+topojson_json(poly, geometry = "polygon", pretty = TRUE)
+
+# Lists
+## From a list of numeric vectors to a polygon
+vecs <- list(c(100.0, 0.0), c(101.0, 0.0), c(101.0, 1.0), c(100.0, 1.0), c(100.0, 0.0))
+topojson_json(vecs, geometry = "polygon", pretty = TRUE)
+
+## from a named list
+mylist <- list(
+  list(latitude = 30, longitude = 120, marker = "red"),
+  list(latitude = 30, longitude = 130, marker = "blue")
+)
+topojson_json(mylist, lat = "latitude", lon = "longitude")
+
+# From a data.frame to points
+topojson_json(us_cities[1:2, ], lat = "lat", lon = "long", pretty = TRUE)
+topojson_json(us_cities[1:2, ],
+  lat = "lat", lon = "long",
+  type = "GeometryCollection", pretty = TRUE
+)
+
+# from data.frame to polygons
+head(states)
+## make list for input to e.g., rMaps
+topojson_json(states[1:351, ], lat = "lat", lon = "long", geometry = "polygon", group = "group")
+
+# from a geo_list
+a <- geojson_list(us_cities[1:2, ], lat = "lat", lon = "long")
+topojson_json(a)
+
+# sp classes
+
+## From SpatialPolygons class
+library("sp")
+poly1 <- Polygons(list(Polygon(cbind(
+  c(-100, -90, -85, -100),
+  c(40, 50, 45, 40)
+))), "1")
+poly2 <- Polygons(list(Polygon(cbind(
+  c(-90, -80, -75, -90),
+  c(30, 40, 35, 30)
+))), "2")
+sp_poly <- SpatialPolygons(list(poly1, poly2), 1:2)
+topojson_json(sp_poly)
+topojson_json(sp_poly, pretty = TRUE)
+
+## data.frame to geojson
+geojson_write(us_cities[1:2, ], lat = "lat", lon = "long") %>% as.json()
+
+# From SpatialPoints class
+x <- c(1, 2, 3, 4, 5)
+y <- c(3, 2, 5, 1, 4)
+s <- SpatialPoints(cbind(x, y))
+topojson_json(s)
+
+## From SpatialPointsDataFrame class
+s <- SpatialPointsDataFrame(cbind(x, y), mtcars[1:5, ])
+topojson_json(s)
+
+## From SpatialLines class
+library("sp")
+c1 <- cbind(c(1, 2, 3), c(3, 2, 2))
+c2 <- cbind(c1[, 1] + .05, c1[, 2] + .05)
+c3 <- cbind(c(1, 2, 3), c(1, 1.5, 1))
+L1 <- Line(c1)
+L2 <- Line(c2)
+L3 <- Line(c3)
+Ls1 <- Lines(list(L1), ID = "a")
+Ls2 <- Lines(list(L2, L3), ID = "b")
+sl1 <- SpatialLines(list(Ls1))
+sl12 <- SpatialLines(list(Ls1, Ls2))
+topojson_json(sl1)
+topojson_json(sl12)
+
+## From SpatialLinesDataFrame class
+dat <- data.frame(
+  X = c("Blue", "Green"),
+  Y = c("Train", "Plane"),
+  Z = c("Road", "River"), row.names = c("a", "b")
+)
+sldf <- SpatialLinesDataFrame(sl12, dat)
+topojson_json(sldf)
+topojson_json(sldf, pretty = TRUE)
+
+## From SpatialGrid
+x <- GridTopology(c(0, 0), c(1, 1), c(5, 5))
+y <- SpatialGrid(x)
+topojson_json(y)
+
+## From SpatialGridDataFrame
+sgdim <- c(3, 4)
+sg <- SpatialGrid(GridTopology(rep(0, 2), rep(10, 2), sgdim))
+sgdf <- SpatialGridDataFrame(sg, data.frame(val = 1:12))
+topojson_json(sgdf)
+
+# From SpatialPixels
+library("sp")
+pixels <- suppressWarnings(SpatialPixels(SpatialPoints(us_cities[c("long", "lat")])))
+summary(pixels)
+topojson_json(pixels)
+
+# From SpatialPixelsDataFrame
+library("sp")
+pixelsdf <- suppressWarnings(
+  SpatialPixelsDataFrame(points = canada_cities[c("long", "lat")], data = canada_cities)
+)
+topojson_json(pixelsdf)
+
+# From sf classes:
+if (require(sf)) {
+  ## sfg (a single simple features geometry)
+  p1 <- rbind(c(0, 0), c(1, 0), c(3, 2), c(2, 4), c(1, 4), c(0, 0))
+  poly <- rbind(c(1, 1), c(1, 2), c(2, 2), c(1, 1))
+  poly_sfg <- st_polygon(list(p1))
+  topojson_json(poly_sfg)
+
+  ## sfc (a collection of geometries)
+  p1 <- rbind(c(0, 0), c(1, 0), c(3, 2), c(2, 4), c(1, 4), c(0, 0))
+  p2 <- rbind(c(5, 5), c(5, 6), c(4, 5), c(5, 5))
+  poly_sfc <- st_sfc(st_polygon(list(p1)), st_polygon(list(p2)))
+  topojson_json(poly_sfc)
+
+  ## sf (collection of geometries with attributes)
+  p1 <- rbind(c(0, 0), c(1, 0), c(3, 2), c(2, 4), c(1, 4), c(0, 0))
+  p2 <- rbind(c(5, 5), c(5, 6), c(4, 5), c(5, 5))
+  poly_sfc <- st_sfc(st_polygon(list(p1)), st_polygon(list(p2)))
+  poly_sf <- st_sf(foo = c("a", "b"), bar = 1:2, poly_sfc)
+  topojson_json(poly_sf)
+}
+
+## Pretty print a json string
+topojson_json(c(-99.74, 32.45))
+topojson_json(c(-99.74, 32.45)) %>% pretty()
+} # }
+```

@@ -1,0 +1,130 @@
+# Convert spatial data files to GeoJSON from various formats.
+
+You can use a web interface called Ogre, or do conversions locally using
+the sf package.
+
+## Usage
+
+``` r
+file_to_geojson(
+  input,
+  method = "web",
+  output = ".",
+  parse = FALSE,
+  encoding = "CP1250",
+  verbose = FALSE,
+  ...
+)
+```
+
+## Arguments
+
+- input:
+
+  The file being uploaded, path to the file on your machine.
+
+- method:
+
+  (character) One of "web" (default) or "local". Matches on partial
+  strings. This parameter determines how the data is read. "web" means
+  we use the Ogre web service, and "local" means we use sf. See Details
+  fore more.
+
+- output:
+
+  Destination for output geojson file. Defaults to current working
+  directory, and gives a random alphanumeric file name
+
+- parse:
+
+  (logical) To parse geojson to data.frame like structures if possible.
+  Default: `FALSE`
+
+- encoding:
+
+  (character) The encoding passed to
+  [`sf::st_read()`](https://r-spatial.github.io/sf/reference/st_read.html).
+  Default: CP1250
+
+- verbose:
+
+  (logical) Printing of
+  [`sf::st_read()`](https://r-spatial.github.io/sf/reference/st_read.html)
+  progress. Default: `FALSE`
+
+- ...:
+
+  Additional parameters passed to
+  [`st_read`](https://r-spatial.github.io/sf/reference/st_read.html)
+
+## Value
+
+path for the geojson file
+
+## Method parameter
+
+The web option uses the Ogre web API. Ogre currently has an output size
+limit of 15MB. See here <http://ogre.adc4gis.com/> for info on the Ogre
+web API. The local option uses the function
+[`st_write`](https://r-spatial.github.io/sf/reference/st_write.html)
+from the package rgdal.
+
+## Ogre
+
+Note that for Shapefiles, GML, MapInfo, and VRT, you need to send zip
+files to Ogre. For other file types (.bna, .csv, .dgn, .dxf, .gxt, .txt,
+.json, .geojson, .rss, .georss, .xml, .gmt, .kml, .kmz) you send the
+actual file with that file extension.
+
+## Linting GeoJSON
+
+If you're having trouble rendering GeoJSON files, ensure you have a
+valid GeoJSON file by running it through the package geojsonlint, which
+has a variety of different GeoJSON linters.
+
+## File size
+
+When using `method="web"`, be aware of file sizes.
+https://ogre.adc4gis.com that we use for this option does not document
+what file size is too large, but you should get an error message like
+"maximum file length exceeded" when that happens. `method="local"`
+shouldn't be sensitive to file sizes.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+file <- system.file("examples", "norway_maple.kml", package = "geojsonio")
+
+# KML type file - using the web method
+file_to_geojson(input = file, method = "web", output = "kml_web")
+## read into memory
+file_to_geojson(input = file, method = "web", output = ":memory:")
+file_to_geojson(input = file, method = "local", output = ":memory:")
+
+# KML type file - using the local method
+file_to_geojson(input = file, method = "local", output = "kml_local")
+
+# Shp type file - using the web method - input is a zipped shp bundle
+file <- system.file("examples", "bison.zip", package = "geojsonio")
+file_to_geojson(file, method = "web", output = "shp_web")
+
+# Shp type file - using the local method - input is the actual .shp file
+file <- system.file("examples", "bison.zip", package = "geojsonio")
+dir <- tempdir()
+unzip(file, exdir = dir)
+list.files(dir)
+shpfile <- file.path(dir, "bison-Bison_bison-20130704-120856.shp")
+file_to_geojson(shpfile, method = "local", output = "shp_local")
+
+# geojson with .json extension
+## this doesn't work anymore, hmmm
+# x <- gsub("\n", "", paste0('https://gist.githubusercontent.com/hunterowens/
+# 25ea24e198c80c9fbcc7/raw/7fd3efda9009f902b5a991a506cea52db19ba143/
+# wards2014.json', collapse = ""))
+# res <- file_to_geojson(x)
+# jsonlite::fromJSON(res)
+# res <- file_to_geojson(x, method = "local")
+# jsonlite::fromJSON(res)
+} # }
+```
